@@ -1,16 +1,17 @@
 import Day01.Dial
-import Day01.Direction.*
-import Day01.Rotation
+import Day01.Direction.Left
+import Day01.Direction.Right
+import Day01.Instruction
 import Day01.parse
 
 fun main() {
 
-    fun part1(input: List<Rotation>): Int {
+    fun part1(input: List<Instruction>): Int {
         val dial = Dial()
         return input.map { dial.rotate(it).value }.count { it == 0 }
     }
 
-    fun part2(input: List<Rotation>): Int =
+    fun part2(input: List<Instruction>): Int =
         Dial().apply {
             input.forEach { rotate(it) }
         }.clicks
@@ -24,35 +25,36 @@ object Day01 {
 
     enum class Direction { Left, Right }
 
-    data class Rotation(val direction: Direction, val distance: Int)
+    data class Instruction(val direction: Direction, val distance: Int)
 
-    fun parse(s: String): Rotation {
+    fun parse(s: String): Instruction {
         val distance = s.drop(1).toInt()
         return when (s.first()) {
-            'L' -> Rotation(Left, distance)
-            'R' -> Rotation(Right, distance)
+            'L' -> Instruction(Left, distance)
+            'R' -> Instruction(Right, distance)
             else -> error("Can't parse $s")
         }
     }
 
-    class Dial() {
-        val elements: List<DialElement> = (0..99).map {
-            DialElement(it)
-        }.apply {
-            zipWithNext().forEach { (a, b) ->
-                a.right = b
-                b.left = a
+    class Dial {
+        val elements: List<DialElement> = (0..99).map { DialElement(it) }
+            .apply {
+                zipWithNext().forEach { (a, b) ->
+                    a.right = b
+                    b.left = a
+                }
+                first().left = last()
+                last().right = first()
             }
-            first().left = last()
-            last().right = first()
-        }
         var currentElement = elements[50]
         var clicks = 0
 
-        fun rotate(rotation: Rotation): DialElement =
-            when (rotation.direction) {
-                Left -> rotate(rotation.distance) { it.left!! }
-                Right -> rotate(rotation.distance) { it.right!! }
+        fun rotate(instruction: Instruction): DialElement =
+            rotate(instruction.distance) {
+                when (instruction.direction) {
+                    Left -> it.left!!
+                    Right -> it.right!!
+                }
             }
 
         fun rotate(distance: Int, rotate: (DialElement) -> DialElement): DialElement {
